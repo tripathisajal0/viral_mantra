@@ -11,19 +11,23 @@ import CampaignDetail from './pages/CampaignDetail';
 import UserWallet from './pages/UserWallet';
 import UserProfile from './pages/UserProfile';
 
+// Unique pages from teammate version
+import BrandCampaignDetail from './pages/brand/BrandCampaignDetail';
+import BrandDashboardV2 from './pages/brand/BrandDashboard';
+import WalletBrand from './pages/brand/Wallet';
+
 // Protected Route Component
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, profile, loading } = useAuth();
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+    <div className="min-h-screen flex items-center justify-center bg-[#EEF0FB]">
+      <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
 
   if (!user) return <Navigate to="/login" />;
 
-  // If user is logged in but profile is missing, they need to register/sign up
   if (!profile && !loading) {
     return <Navigate to="/login" />;
   }
@@ -34,7 +38,6 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 
   return children;
 };
-
 
 function App() {
   return (
@@ -78,6 +81,24 @@ function App() {
             <CampaignLaunch />
           </ProtectedRoute>
         } />
+        
+        {/* Teammate Brand Routes Integration */}
+        <Route path="/brand/v2" element={
+          <ProtectedRoute requiredRole="brand">
+            <BrandDashboardV2 />
+          </ProtectedRoute>
+        } />
+        <Route path="/brand/campaign/:id" element={
+          <ProtectedRoute requiredRole="brand">
+            <BrandCampaignDetail />
+          </ProtectedRoute>
+        } />
+        <Route path="/brand/wallet" element={
+          <ProtectedRoute requiredRole="brand">
+            <WalletBrand />
+          </ProtectedRoute>
+        } />
+
         <Route path="/admin" element={
           <ProtectedRoute requiredRole="brand">
             <AdminDashboard />
