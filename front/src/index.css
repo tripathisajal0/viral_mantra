@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#EEF0FB] text-[#131b2e] antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 24px rgba(79, 70, 229, 0.06);
+  }
+
+  .hero-gradient {
+    background: radial-gradient(circle at top right, rgba(79, 70, 229, 0.08), transparent),
+                radial-gradient(circle at bottom left, rgba(131, 26, 218, 0.04), transparent);
+  }
+
+  .text-gradient {
+    background: linear-gradient(to right, #4f46e5, #9333ea);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .surface-card {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(79, 70, 229, 0.08);
+    box-shadow: 0 2px 16px rgba(79, 70, 229, 0.06);
+  }
+}
