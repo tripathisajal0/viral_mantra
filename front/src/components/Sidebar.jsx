@@ -15,9 +15,17 @@ import { cn } from '../lib/utils';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 
-const Sidebar = () => {
+import { useAuth } from '../context/AuthContext';
+import { PlusCircle } from 'lucide-react';
+
+const Sidebar = ({ onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { profile } = useAuth();
+
+  const handleLinkClick = () => {
+    if (onClose) onClose();
+  };
 
   const handleLogout = async () => {
     try {
@@ -28,7 +36,7 @@ const Sidebar = () => {
     }
   };
 
-  const menuItems = [
+  const creatorItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/creator' },
     { icon: Megaphone, label: 'Campaigns', path: '/campaigns' },
     { icon: Compass, label: 'Marketplace', path: '/marketplace' },
@@ -37,8 +45,19 @@ const Sidebar = () => {
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
+  const brandItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/brand' },
+    { icon: PlusCircle, label: 'Launch Campaign', path: '/brand/launch' },
+    { icon: Megaphone, label: 'My Campaigns', path: '/brand/campaigns' },
+    { icon: BarChart3, label: 'Brand Analytics', path: '/brand/analytics' },
+    { icon: Wallet, label: 'Wallet', path: '/brand/wallet' },
+    { icon: Settings, label: 'Brand Settings', path: '/brand/settings' },
+  ];
+
+  const menuItems = profile?.role === 'brand' ? brandItems : creatorItems;
+
   return (
-    <aside className="fixed left-0 top-0 h-full flex flex-col p-4 z-40 w-64 border-r border-white/20 bg-white/80 backdrop-blur-xl shadow-[20px_0_40px_rgba(79,70,229,0.08)] antialiased">
+    <aside className="h-full flex flex-col p-4 w-64 border-r border-slate-100 bg-white shadow-[20px_0_40px_rgba(79,70,229,0.04)] antialiased">
       <div className="mb-8 px-2">
         <h1 className="text-2xl font-black tracking-tighter bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Viral Mantra</h1>
         <p className="text-[10px] uppercase tracking-widest text-outline font-bold">Creator Economy Hub</p>
@@ -51,6 +70,7 @@ const Sidebar = () => {
             <Link
               key={item.label}
               to={item.path}
+              onClick={handleLinkClick}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 hover:scale-[1.02]",
                 isActive

@@ -4,10 +4,13 @@ import { useAuth } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import CreatorDashboard from './pages/CreatorDashboard';
-import BrandDashboard from './pages/BrandDashboard';
-import CampaignLaunch from './pages/CampaignLaunch';
+import BrandDashboard from './pages/brand/BrandDashboard';
+import CampaignLaunch from './pages/brand/CampaignLaunch';
+import BrandCampaignDetail from './pages/brand/BrandCampaignDetail';
+import Wallet from './pages/brand/Wallet';
 import AdminDashboard from './pages/AdminDashboard';
 import CampaignDetail from './pages/CampaignDetail';
+import DashboardLayout from './components/DashboardLayout';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -43,29 +46,54 @@ function App() {
         {/* Creator Routes */}
         <Route path="/creator" element={
           <ProtectedRoute requiredRole="creator">
-            <CreatorDashboard />
+            <DashboardLayout>
+              <CreatorDashboard />
+            </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/campaign/:id" element={
           <ProtectedRoute requiredRole="creator">
-            <CampaignDetail />
+            <DashboardLayout>
+              <CampaignDetail />
+            </DashboardLayout>
           </ProtectedRoute>
         } />
 
         {/* Brand/Admin Routes */}
         <Route path="/brand" element={
           <ProtectedRoute requiredRole="brand">
-            <BrandDashboard />
+            <DashboardLayout>
+              <BrandDashboard />
+            </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/brand/launch" element={
           <ProtectedRoute requiredRole="brand">
-            <CampaignLaunch />
+            <DashboardLayout>
+              <CampaignLaunch />
+            </DashboardLayout>
           </ProtectedRoute>
         } />
+        <Route path="/brand/campaign/:id" element={
+          <ProtectedRoute requiredRole="brand">
+            <DashboardLayout>
+              <BrandCampaignDetail />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/brand/wallet" element={
+          <ProtectedRoute requiredRole="brand">
+            <DashboardLayout>
+              <Wallet />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+
         <Route path="/admin" element={
           <ProtectedRoute requiredRole="brand">
-            <AdminDashboard />
+            <DashboardLayout>
+              <AdminDashboard />
+            </DashboardLayout>
           </ProtectedRoute>
         } />
 

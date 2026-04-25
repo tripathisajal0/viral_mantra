@@ -9,12 +9,8 @@ import { useAuth } from '../context/AuthContext';
 const CreatorDashboard = () => {
   const { profile } = useAuth();
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      <TopBar />
-      
-      <main className="ml-64 pt-16 p-8">
-        <div className="max-w-container-max mx-auto space-y-8">
+    <div className="space-y-8">
+      <div className="max-w-container-max mx-auto space-y-8">
           {/* Header Section */}
           <section className="flex flex-col md:flex-row md:items-end justify-between gap-4 py-4">
             <div>
@@ -254,7 +250,6 @@ const CreatorDashboard = () => {
             </div>
           </section>
         </div>
-      </main>
 
       {/* FAB */}
       <div className="fixed bottom-8 right-8 z-50">

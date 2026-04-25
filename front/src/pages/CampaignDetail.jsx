@@ -20,12 +20,8 @@ import { cn } from '../lib/utils';
 
 const CampaignDetail = () => {
   return (
-    <div className="min-h-screen bg-surface">
-      <Sidebar />
-      <TopBar />
-      
-      <main className="ml-64 pt-24 px-8 pb-12 min-h-screen">
-        <div className="max-w-container-max mx-auto">
+    <div className="space-y-8">
+      <div className="max-w-container-max mx-auto">
           {/* Breadcrumbs */}
           <div className="flex items-center gap-2 mb-6 text-caption text-outline font-medium">
             <a className="hover:text-indigo-600 transition-colors" href="#">Campaigns</a>
@@ -245,7 +241,6 @@ const CampaignDetail = () => {
             </div>
           </div>
         </div>
-      </main>
     </div>
   );
 };

@@ -15,6 +15,11 @@ import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
+  const { register } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, profile } = useAuth();
+
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,8 +29,12 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { register } = useAuth();
-  const navigate = useNavigate();
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (user && profile) {
+      navigate(profile.role === 'brand' ? '/brand' : '/creator');
+    }
+  }, [user, profile, navigate]);
 
   // Clear error message when switching between Login and Sign Up
   React.useEffect(() => {
@@ -48,8 +57,7 @@ const LoginPage = () => {
         await register(selectedRole, fullName);
       }
 
-      console.log("Auth success! Navigating to dashboard...");
-      navigate(selectedRole === 'brand' ? '/brand' : '/creator');
+      console.log("Auth success! Profile will load and navigate...");
     } catch (err) {
       console.error("FULL AUTH ERROR:", err);
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found') {
@@ -80,7 +88,7 @@ const LoginPage = () => {
       }
 
       // Existing user found
-      navigate(userSnap.data().role === 'brand' ? '/brand' : '/creator');
+      console.log("Google Auth success! Profile will load and navigate...");
     } catch (err) {
       console.error("GOOGLE ERROR:", err);
       setError(err.message);
