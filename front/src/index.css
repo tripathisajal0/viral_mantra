@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-on-surface antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 20px 40px rgba(79, 70, 229, 0.08);
+  }
+
+  .hero-gradient {
+    background: radial-gradient(circle at top right, rgba(79, 70, 229, 0.1), transparent),
+                radial-gradient(circle at bottom left, rgba(131, 26, 218, 0.05), transparent);
+  }
+
+  .text-gradient {
+    background: linear-gradient(to right, #4f46e5, #9333ea);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
