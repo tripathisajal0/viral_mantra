@@ -19,7 +19,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { db } from '../../firebase';
-import { doc, onSnapshot, collection, query, where, updateDoc, increment } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, updateDoc, increment, arrayUnion } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 
 const BrandCampaignDetail = () => {
@@ -33,53 +33,82 @@ const BrandCampaignDetail = () => {
   useEffect(() => {
     if (!id) return;
 
-    // 1. Listen to Campaign Details
+    // Listen to Campaign Details
     const campaignRef = doc(db, "brand", id);
     const unsubscribeCampaign = onSnapshot(campaignRef, (docSnap) => {
       if (docSnap.exists()) {
-        setCampaign({ id: docSnap.id, ...docSnap.data() });
+        const data = docSnap.id ? { id: docSnap.id, ...docSnap.data() } : docSnap.data();
+        setCampaign(data);
+        // Sync applications state with campaign.requests
+        if (data.requests) {
+          setApplications(data.requests);
+        }
       } else {
         console.error("Campaign not found");
       }
       setLoading(false);
     });
 
-    // 2. Listen to Applications for this campaign
-    const q = query(collection(db, "applications"), where("campaignId", "==", id));
-    const unsubscribeApps = onSnapshot(q, (querySnapshot) => {
-      const appsData = [];
-      querySnapshot.forEach((doc) => {
-        appsData.push({ id: doc.id, ...doc.data() });
-      });
-      setApplications(appsData);
-    });
-
     return () => {
       unsubscribeCampaign();
-      unsubscribeApps();
     };
   }, [id]);
 
-  const handleApprove = async (appId) => {
+  const handleApprove = async (creatorId) => {
     try {
-      const appRef = doc(db, "applications", appId);
-      await updateDoc(appRef, {
-        status: 'approved',
-        approvedAt: new Date()
+      const campaignRef = doc(db, "brand", id);
+      const creatorRef = doc(db, "users", creatorId);
+
+      // 1. Update Campaign document (modify the requests array)
+      const updatedRequests = (campaign.requests || []).map(req => {
+        if (req.creatorId === creatorId) {
+          return { 
+            ...req, 
+            status: 'approved', 
+            approvedAt: new Date().toISOString(),
+            totalViews: 0,
+            earnings: 0,
+            links: []
+          };
+        }
+        return req;
       });
-      // Logic for adding to campaign participants could be handled here or by background function
+
+      await updateDoc(campaignRef, { requests: updatedRequests });
+
+      // 2. Update Creator document in users collection
+      await updateDoc(creatorRef, {
+        campaigns: arrayUnion({
+          campaignId: id,
+          campaignTitle: campaign.title,
+          status: 'approved',
+          approvedAt: new Date().toISOString(),
+          brandId: user.uid,
+          cpm: campaign.cpm || 0,
+          totalViews: 0,
+          estimatedRevenue: 0,
+          links: []
+        })
+      });
+
+      console.log("Creator approved and campaign linked!");
     } catch (error) {
       console.error("Approval error:", error);
     }
   };
 
-  const handleReject = async (appId) => {
+  const handleReject = async (creatorId) => {
     try {
-      const appRef = doc(db, "applications", appId);
-      await updateDoc(appRef, {
-        status: 'rejected',
-        rejectedAt: new Date()
+      const campaignRef = doc(db, "brand", id);
+      
+      const updatedRequests = (campaign.requests || []).map(req => {
+        if (req.creatorId === creatorId) {
+          return { ...req, status: 'rejected', rejectedAt: new Date().toISOString() };
+        }
+        return req;
       });
+
+      await updateDoc(campaignRef, { requests: updatedRequests });
     } catch (error) {
       console.error("Rejection error:", error);
     }
@@ -190,7 +219,7 @@ const BrandCampaignDetail = () => {
                   </div>
                 ) : (
                   pendingApps.map((app) => (
-                    <div key={app.id} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors group">
+                    <div key={app.creatorId} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors group">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white shadow-sm">
                           <img src={app.creatorPhoto || `https://i.pravatar.cc/150?u=${app.creatorId}`} alt="Creator" className="w-full h-full object-cover" />
@@ -206,13 +235,13 @@ const BrandCampaignDetail = () => {
                       </div>
                       <div className="flex items-center gap-3">
                         <button 
-                          onClick={() => handleReject(app.id)}
+                          onClick={() => handleReject(app.creatorId)}
                           className="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-outline hover:text-error hover:border-error transition-all"
                         >
                           <XCircle size={20} />
                         </button>
                         <button 
-                          onClick={() => handleApprove(app.id)}
+                          onClick={() => handleApprove(app.creatorId)}
                           className="px-6 py-2 bg-primary text-white rounded-full font-label-bold shadow-md hover:shadow-lg transition-all"
                         >
                           Approve
@@ -239,7 +268,7 @@ const BrandCampaignDetail = () => {
                   </div>
                 ) : (
                   approvedCreators.map((app) => (
-                    <div key={app.id} className="p-4 rounded-xl border border-outline-variant/50 hover:border-primary/30 transition-all flex items-center gap-4 bg-white shadow-sm">
+                    <div key={app.creatorId} className="p-4 rounded-xl border border-outline-variant/50 hover:border-primary/30 transition-all flex items-center gap-4 bg-white shadow-sm">
                       <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100">
                         <img src={app.creatorPhoto || `https://i.pravatar.cc/150?u=${app.creatorId}`} alt="Creator" className="w-full h-full object-cover" />
                       </div>

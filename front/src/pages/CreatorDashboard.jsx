@@ -107,7 +107,7 @@ const CreatorDashboard = () => {
                 {[
                   { icon: Users, label: 'Followers', value: profile?.followers?.toLocaleString() || '—' },
                   { icon: Music2, label: 'Platforms', value: profile?.platforms?.length || '0' },
-                  { icon: Camera, label: 'Campaigns', value: profile?.campaigns || '0' },
+                  { icon: Camera, label: 'Campaigns', value: profile?.campaigns?.length || '0' },
                 ].map(({ icon: Icon, label, value }) => (
                   <div key={label} className="bg-indigo-50 p-3 md:p-4 rounded-xl border border-indigo-100 text-center">
                     <div className="flex items-center justify-center gap-1 text-indigo-500 mb-1">
@@ -165,7 +165,7 @@ const CreatorDashboard = () => {
             {[
               {
                 title: 'Total Views',
-                value: '0',
+                value: profile?.totalViews?.toLocaleString() || '0',
                 stats: [
                   { icon: Eye, color: 'indigo', label: 'Total' },
                   { icon: Camera, color: 'orange', label: 'IG Reels' },
@@ -174,11 +174,26 @@ const CreatorDashboard = () => {
               },
               {
                 title: 'Submissions',
-                value: '0',
+                value: (campaigns.filter(c => c.requests?.some(r => r.creatorId === profile?.uid)).length).toString(),
                 stats: [
-                  { icon: CheckCircle2, color: 'indigo', label: 'Approved' },
-                  { icon: MessageSquare, color: 'yellow', label: 'Pending' },
-                  { icon: Share2, color: 'purple', label: 'Rejected' },
+                  { 
+                    icon: CheckCircle2, 
+                    color: 'indigo', 
+                    label: 'Approved',
+                    count: campaigns.filter(c => c.requests?.some(r => r.creatorId === profile?.uid && r.status === 'approved')).length 
+                  },
+                  { 
+                    icon: MessageSquare, 
+                    color: 'yellow', 
+                    label: 'Pending',
+                    count: campaigns.filter(c => c.requests?.some(r => r.creatorId === profile?.uid && r.status === 'pending')).length
+                  },
+                  { 
+                    icon: Share2, 
+                    color: 'purple', 
+                    label: 'Rejected',
+                    count: campaigns.filter(c => c.requests?.some(r => r.creatorId === profile?.uid && r.status === 'rejected')).length
+                  },
                 ]
               }
             ].map(({ title, value, stats }) => (
@@ -186,10 +201,13 @@ const CreatorDashboard = () => {
                 <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-3">{title}</p>
                 <h4 className="text-4xl md:text-5xl font-black mb-6 text-slate-800">{value}</h4>
                 <div className="grid grid-cols-3 gap-2">
-                  {stats.map(({ icon: Icon, color, label }) => (
-                    <div key={label} className={`flex items-center justify-center gap-1.5 bg-${color}-50 border border-${color}-100 py-2 rounded-xl`}>
-                      <Icon size={12} className={`text-${color}-500`} />
-                      <span className="text-[10px] md:text-xs font-bold text-slate-700">{label}</span>
+                  {stats.map(({ icon: Icon, color, label, count }) => (
+                    <div key={label} className={`flex flex-col items-center justify-center gap-1 bg-${color}-50 border border-${color}-100 py-3 rounded-xl`}>
+                      <div className="flex items-center gap-1.5">
+                        <Icon size={12} className={`text-${color}-500`} />
+                        <span className="text-[10px] md:text-xs font-bold text-slate-700">{label}</span>
+                      </div>
+                      {count !== undefined && <span className="text-sm font-black text-slate-800">{count}</span>}
                     </div>
                   ))}
                 </div>

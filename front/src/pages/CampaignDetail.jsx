@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { db, isFirebaseReady } from '../firebase';
-import { doc, onSnapshot, updateDoc, arrayUnion, collection, addDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, arrayUnion, collection, addDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 
 const PLATFORM_ICONS = {
@@ -58,9 +58,84 @@ const CampaignDetail = () => {
   const [submitting, setSubmitting] = useState(false);
   const [joined, setJoined] = useState(false);
   const [targetViews, setTargetViews] = useState(50000);
+  const [linkInput, setLinkInput] = useState('');
+  const [submittingLink, setSubmittingLink] = useState(false);
 
+  const handleSubmitLink = async () => {
+    if (!linkInput.trim() || !campaign || !profile) return;
+    setSubmittingLink(true);
 
+    try {
+      // Simulate fetching views (random between 1k and 50k)
+      const simulatedViews = Math.floor(Math.random() * 50000) + 1000;
+      const earningsForLink = (simulatedViews / 1000) * (campaign.cpm || 0);
 
+      const newLinkObj = {
+        url: linkInput.trim(),
+        views: simulatedViews,
+        earnings: earningsForLink,
+        addedAt: new Date().toISOString()
+      };
+
+      // 1. Update the campaign.requests array
+      const campaignRef = doc(db, 'brand', id);
+      const updatedRequests = (campaign.requests || []).map(req => {
+        if (req.creatorId === profile.uid) {
+          const updatedLinks = [...(req.links || []), newLinkObj];
+          const totalViews = updatedLinks.reduce((sum, l) => sum + l.views, 0);
+          const totalEarnings = updatedLinks.reduce((sum, l) => sum + l.earnings, 0);
+          return {
+            ...req,
+            links: updatedLinks,
+            totalViews,
+            earnings: totalEarnings
+          };
+        }
+        return req;
+      });
+
+      // Also update total currentViews and spend on the campaign level
+      const newCampaignViews = (campaign.currentViews || 0) + simulatedViews;
+      const newCampaignSpend = (campaign.spend || 0) + earningsForLink;
+      const progress = campaign.budget ? Math.min((newCampaignSpend / campaign.budget) * 100, 100) : 0;
+
+      await updateDoc(campaignRef, { 
+        requests: updatedRequests,
+        currentViews: newCampaignViews,
+        spend: newCampaignSpend,
+        progress: progress
+      });
+
+      // 2. Update the user's campaigns array
+      const userRef = doc(db, 'users', profile.uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        const updatedUserCampaigns = (userData.campaigns || []).map(c => {
+          if (c.campaignId === id) {
+             const updatedLinks = [...(c.links || []), newLinkObj];
+             const totalViews = updatedLinks.reduce((sum, l) => sum + l.views, 0);
+             const estRev = updatedLinks.reduce((sum, l) => sum + l.earnings, 0);
+             return {
+               ...c,
+               links: updatedLinks,
+               totalViews,
+               estimatedRevenue: estRev
+             };
+          }
+          return c;
+        });
+
+        await updateDoc(userRef, { campaigns: updatedUserCampaigns });
+      }
+
+      setLinkInput('');
+    } catch (err) {
+      console.error('Error submitting link:', err);
+    } finally {
+      setSubmittingLink(false);
+    }
+  };
   useEffect(() => {
     if (!isFirebaseReady) {
       setError('Firebase not configured.');
@@ -85,8 +160,22 @@ const CampaignDetail = () => {
     return () => unsub();
   }, [id]);
 
+  useEffect(() => {
+    if (campaign && profile) {
+      const isAlreadyJoined = campaign.requests?.some(r => r.creatorId === profile.uid);
+      if (isAlreadyJoined) setJoined(true);
+    }
+  }, [campaign, profile]);
+
   const handleJoin = async () => {
     if (profile?.verificationStatus !== 'verified') return;
+    
+    // Prevent multiple applications
+    if (campaign?.requests?.some(r => r.creatorId === profile?.uid)) {
+      setJoined(true);
+      return;
+    }
+
     setSubmitting(true);
     try {
       const campaignRef = doc(db, 'brand', id);
@@ -102,16 +191,15 @@ const CampaignDetail = () => {
         timestamp: new Date().toISOString(),
         createdAt: new Date(),
         status: 'pending',
-        type: 'application'
+        type: 'application',
+        followers: profile?.followers || '1k+',
+        engagement: profile?.engagement || '4.2%'
       };
 
-      // 1. Update Campaign document (Array approach)
+      // Update Campaign document (Array approach) - ONLY this is needed now
       await updateDoc(campaignRef, {
         requests: arrayUnion(applicationData)
       });
-
-      // 2. Add to Applications collection
-      await addDoc(collection(db, 'applications'), applicationData);
 
       setJoined(true);
     } catch (err) {
@@ -374,79 +462,145 @@ const CampaignDetail = () => {
                 </div>
               )}
 
-              {/* Join Campaign Section */}
-              <div className="bg-white rounded-2xl p-6 border-t-4 border-indigo-600 border border-indigo-100 shadow-sm text-center">
-                <h3 className="font-bold text-lg mb-2">Join Campaign</h3>
-                <p className="text-slate-500 text-sm mb-6 font-medium leading-relaxed">
-                  Apply now to collaborate with {campaign?.brandName || 'the brand'} and start earning.
-                </p>
-                
-                <button
-                  onClick={handleJoin}
-                  disabled={submitting || joined || profile?.verificationStatus !== 'verified'}
-                  className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 
-                    ${joined 
-                      ? 'bg-green-100 text-green-700 border border-green-200 cursor-default' 
-                      : profile?.verificationStatus !== 'verified'
-                        ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-[0.98]'
-                    } 
-                    disabled:opacity-70 disabled:transform-none`}
-                >
-                  {submitting ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : joined ? (
-                    <>
-                      <CheckCircle2 size={18} />
-                      Joined Successfully
-                    </>
-                  ) : profile?.verificationStatus === 'pending' ? (
-                    <>
-                      <Clock size={18} />
-                      Verification Pending
-                    </>
-                  ) : profile?.verificationStatus === 'rejected' ? (
-                    <>
-                      <XCircle size={18} />
-                      Verification Rejected
-                    </>
-                  ) : profile?.verificationStatus === 'verified' ? (
-                    <>
-                      <Send size={18} />
-                      Join Campaign
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle size={18} />
-                      Verification Required
-                    </>
+              {/* Action Section: Submit Links OR Join Campaign */}
+              {campaign?.requests?.find(r => r.creatorId === profile?.uid)?.status === 'approved' ? (
+                <div className="bg-white rounded-2xl p-6 border-t-4 border-green-500 border border-indigo-100 shadow-sm">
+                  <h3 className="font-bold text-lg mb-4 text-slate-800 flex items-center gap-2">
+                    <CheckCircle2 className="text-green-500" size={20} />
+                    Campaign Approved
+                  </h3>
+                  
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Views</p>
+                      <p className="text-lg font-black text-indigo-600">
+                        {Number(campaign.requests.find(r => r.creatorId === profile?.uid)?.totalViews || 0).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Est. Revenue</p>
+                      <p className="text-lg font-black text-indigo-600">
+                        ₹{Number(campaign.requests.find(r => r.creatorId === profile?.uid)?.earnings || 0).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 mb-6">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Submit Content</p>
+                    <div className="flex gap-2">
+                      <input 
+                        type="url" 
+                        value={linkInput}
+                        onChange={(e) => setLinkInput(e.target.value)}
+                        placeholder="Paste Reel/Short link..."
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <button 
+                        onClick={handleSubmitLink}
+                        disabled={submittingLink || !linkInput.trim()}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[80px]"
+                      >
+                        {submittingLink ? <Loader2 size={16} className="animate-spin" /> : 'Submit'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {campaign.requests.find(r => r.creatorId === profile?.uid)?.links?.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Submitted Links</p>
+                      <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                        {campaign.requests.find(r => r.creatorId === profile?.uid).links.map((link, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                            <div className="flex items-center gap-2 overflow-hidden mr-2">
+                              <LinkIcon className="text-indigo-400 shrink-0" size={14} />
+                              <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-700 truncate hover:text-indigo-600 hover:underline">
+                                {link.url}
+                              </a>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-xs font-bold text-indigo-600">{Number(link.views).toLocaleString()} <span className="text-[9px] text-slate-400 font-normal">views</span></p>
+                              <p className="text-[10px] font-bold text-green-600">₹{Number(link.earnings).toLocaleString()}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
-                </button>
-                
-                {joined && (
-                  <p className="mt-4 text-xs text-green-600 font-bold flex items-center justify-center gap-1 animate-pulse">
-                    <CheckCircle2 size={12} /> Application sent to brand!
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl p-6 border-t-4 border-indigo-600 border border-indigo-100 shadow-sm text-center">
+                  <h3 className="font-bold text-lg mb-2">Join Campaign</h3>
+                  <p className="text-slate-500 text-sm mb-6 font-medium leading-relaxed">
+                    Apply now to collaborate with {campaign?.brandName || 'the brand'} and start earning.
                   </p>
-                )}
+                  
+                  <button
+                    onClick={handleJoin}
+                    disabled={submitting || joined || profile?.verificationStatus !== 'verified'}
+                    className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 
+                      ${joined 
+                        ? 'bg-green-100 text-green-700 border border-green-200 cursor-default' 
+                        : profile?.verificationStatus !== 'verified'
+                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-[0.98]'
+                      } 
+                      disabled:opacity-70 disabled:transform-none`}
+                  >
+                    {submitting ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : joined ? (
+                      <>
+                        <CheckCircle2 size={18} />
+                        Joined Successfully
+                      </>
+                    ) : profile?.verificationStatus === 'pending' ? (
+                      <>
+                        <Clock size={18} />
+                        Verification Pending
+                      </>
+                    ) : profile?.verificationStatus === 'rejected' ? (
+                      <>
+                        <XCircle size={18} />
+                        Verification Rejected
+                      </>
+                    ) : profile?.verificationStatus === 'verified' ? (
+                      <>
+                        <Send size={18} />
+                        Join Campaign
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle size={18} />
+                        Verification Required
+                      </>
+                    )}
+                  </button>
+                  
+                  {joined && (
+                    <p className="mt-4 text-xs text-green-600 font-bold flex items-center justify-center gap-1 animate-pulse">
+                      <CheckCircle2 size={12} /> Application sent to brand!
+                    </p>
+                  )}
 
-                {!joined && profile?.verificationStatus === 'pending' && (
-                  <p className="mt-4 text-xs text-amber-600 font-bold flex items-center justify-center gap-1">
-                    <AlertCircle size={12} /> You'll be able to join once your account is verified.
-                  </p>
-                )}
+                  {!joined && profile?.verificationStatus === 'pending' && (
+                    <p className="mt-4 text-xs text-amber-600 font-bold flex items-center justify-center gap-1">
+                      <AlertCircle size={12} /> You'll be able to join once your account is verified.
+                    </p>
+                  )}
 
-                {!joined && profile?.verificationStatus === 'rejected' && (
-                  <p className="mt-4 text-xs text-red-600 font-bold flex items-center justify-center gap-1">
-                    <XCircle size={12} /> Your verification was not approved.
-                  </p>
-                )}
+                  {!joined && profile?.verificationStatus === 'rejected' && (
+                    <p className="mt-4 text-xs text-red-600 font-bold flex items-center justify-center gap-1">
+                      <XCircle size={12} /> Your verification was not approved.
+                    </p>
+                  )}
 
-                {!joined && !profile?.verificationStatus && (
-                  <p className="mt-4 text-xs text-indigo-600 font-bold flex items-center justify-center gap-1">
-                    <AlertCircle size={12} /> Please complete your profile to apply.
-                  </p>
-                )}
-              </div>
+                  {!joined && !profile?.verificationStatus && (
+                    <p className="mt-4 text-xs text-indigo-600 font-bold flex items-center justify-center gap-1">
+                      <AlertCircle size={12} /> Please complete your profile to apply.
+                    </p>
+                  )}
+                </div>
+              )}
 
             </div>
           </div>

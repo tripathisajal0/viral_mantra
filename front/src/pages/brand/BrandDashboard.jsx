@@ -41,6 +41,8 @@ const BrandDashboard = () => {
       let totalBudgetSum = 0;
       let totalReachSum = 0;
       let totalCpmSum = 0;
+      let approvedCreatorsCount = 0;
+      let pendingRequests = [];
       let count = 0;
 
       querySnapshot.forEach((doc) => {
@@ -49,38 +51,30 @@ const BrandDashboard = () => {
         totalBudgetSum += parseFloat(data.budget) || 0;
         totalReachSum += parseInt(data.currentViews) || 0;
         totalCpmSum += parseFloat(data.cpm) || 0;
+        
+        // Aggregate stats from the nested requests array
+        const approved = (data.requests || []).filter(r => r.status === 'approved');
+        approvedCreatorsCount += approved.length;
+        
+        const pending = (data.requests || []).filter(r => r.status === 'pending');
+        pendingRequests = [...pendingRequests, ...pending];
+
         count++;
       });
       
       setCampaigns(campaignsData);
+      setNotifications(pendingRequests);
       setStats(prev => ({
         ...prev,
         totalReach: totalReachSum.toLocaleString(),
         avgCpm: count > 0 ? `₹${(totalCpmSum / count).toFixed(2)}` : '₹0.00',
-        totalBudget: totalBudgetSum
+        totalBudget: totalBudgetSum,
+        participation: approvedCreatorsCount.toString()
       }));
-    });
-
-    // Fetch total approved creators across all campaigns
-    const qApproved = query(collection(db, "applications"), where("brandId", "==", user.uid), where("status", "==", "approved"));
-    const unsubscribeApproved = onSnapshot(qApproved, (querySnapshot) => {
-      setStats(prev => ({ ...prev, participation: querySnapshot.size.toString() }));
-    });
-
-    // Fetch pending applications for this brand in real-time
-    const qApps = query(collection(db, "applications"), where("brandId", "==", user.uid), where("status", "==", "pending"));
-    const unsubscribeApps = onSnapshot(qApps, (querySnapshot) => {
-      const appsData = [];
-      querySnapshot.forEach((doc) => {
-        appsData.push({ id: doc.id, ...doc.data() });
-      });
-      setNotifications(appsData);
     });
 
     return () => {
       unsubscribeCampaigns();
-      unsubscribeApproved();
-      unsubscribeApps();
     };
   }, [user]);
 

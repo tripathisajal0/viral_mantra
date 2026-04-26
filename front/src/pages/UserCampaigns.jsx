@@ -29,32 +29,19 @@ const UserCampaigns = () => {
   const [fetchError, setFetchError] = useState(null);
 
   useEffect(() => {
-    if (!isFirebaseReady || !profile?.campaigns || profile.campaigns.length === 0) {
+    if (!profile?.campaigns || profile.campaigns.length === 0) {
+      setCampaigns([]);
       setLoading(false);
       return;
     }
 
-    setLoading(true);
-    console.log('[UserCampaigns] Fetching joined campaigns:', profile.campaigns);
-    
-    // Firestore 'in' query supports up to 10-30 items depending on version, 
-    // for now we assume it's small or we'd need to batch.
-    const q = query(
-      collection(db, 'brand'), 
-      where('title', 'in', profile.campaigns)
+    // Support both ID strings and full campaign objects
+    const formattedCampaigns = profile.campaigns.map(c => 
+      typeof c === 'string' ? { id: c, title: c } : c
     );
-
-    const unsub = onSnapshot(q, (snap) => {
-      const live = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setCampaigns(live);
-      setLoading(false);
-    }, (err) => {
-      console.error('[UserCampaigns] Firestore fetch error:', err);
-      setFetchError(err.message);
-      setLoading(false);
-    });
-
-    return () => unsub();
+    
+    setCampaigns(formattedCampaigns);
+    setLoading(false);
   }, [profile?.campaigns]);
 
   return (
@@ -170,12 +157,22 @@ const UserCampaigns = () => {
                   </h3>
                   <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-50">
                     <div className="flex flex-col">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Target Views</span>
-                      <span className="text-sm font-bold text-slate-700">{Number(campaign.targetViews || 0).toLocaleString()}</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                        {campaign.totalViews !== undefined ? 'Current Views' : 'Target Views'}
+                      </span>
+                      <span className="text-sm font-bold text-slate-700">
+                        {campaign.totalViews !== undefined 
+                          ? Number(campaign.totalViews || 0).toLocaleString() 
+                          : Number(campaign.targetViews || 0).toLocaleString()}
+                      </span>
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Est. Payout</span>
-                      <span className="text-sm font-black text-indigo-600">₹{((campaign.targetViews || 0) / 1000 * (campaign.cpm || 0)).toLocaleString()}</span>
+                      <span className="text-sm font-black text-indigo-600">
+                        ₹{campaign.estimatedRevenue !== undefined 
+                          ? Number(campaign.estimatedRevenue || 0).toLocaleString() 
+                          : ((campaign.targetViews || 0) / 1000 * (campaign.cpm || 0)).toLocaleString()}
+                      </span>
                     </div>
                   </div>
                 </div>
