@@ -128,10 +128,10 @@ const CreatorDashboard = () => {
                   <div>
                     <div className="flex items-center gap-2 text-indigo-300 mb-3">
                       <Wallet size={14} />
-                      <span className="text-[10px] font-bold uppercase tracking-widest">Total Earnings</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Wallet Balance</span>
                     </div>
                     <h3 className="text-4xl md:text-5xl font-black tracking-tighter">
-                      ₹{profile?.totalEarnings?.toLocaleString() || '0.00'}
+                      ₹{profile?.walletBalance?.toLocaleString() || '0.00'}
                     </h3>
                     <p className="mt-3 text-indigo-300 text-xs font-bold flex items-center gap-2">
                       <span className="w-2 h-2 bg-indigo-400 rounded-full" />

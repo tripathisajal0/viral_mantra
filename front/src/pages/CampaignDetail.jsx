@@ -66,14 +66,18 @@ const CampaignDetail = () => {
     setSubmittingLink(true);
 
     try {
-      // Simulate fetching views (random between 1k and 50k)
-      const simulatedViews = Math.floor(Math.random() * 50000) + 1000;
-      const earningsForLink = (simulatedViews / 1000) * (campaign.cpm || 0);
-
+      // Fetch actual views via our backend scraper
+      const response = await fetch('http://localhost:5000/api/views/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: linkInput.trim() })
+      });
+      const data = await response.json();
+      const fetchedViews = data.views || 1000;
+      
       const newLinkObj = {
         url: linkInput.trim(),
-        views: simulatedViews,
-        earnings: earningsForLink,
+        views: fetchedViews,
         addedAt: new Date().toISOString()
       };
 
@@ -83,7 +87,18 @@ const CampaignDetail = () => {
         if (req.creatorId === profile.uid) {
           const updatedLinks = [...(req.links || []), newLinkObj];
           const totalViews = updatedLinks.reduce((sum, l) => sum + l.views, 0);
-          const totalEarnings = updatedLinks.reduce((sum, l) => sum + l.earnings, 0);
+          
+          // Calculate earnings and cap at maxPayout
+          let totalEarnings = (totalViews / 1000) * (campaign.cpm || 0);
+          if (campaign.maxPayout && totalEarnings > campaign.maxPayout) {
+            totalEarnings = campaign.maxPayout;
+          }
+
+          // Distribute earnings to links roughly (for UI display only)
+          updatedLinks.forEach(l => {
+             l.earnings = (l.views / totalViews) * totalEarnings;
+          });
+
           return {
             ...req,
             links: updatedLinks,
@@ -94,9 +109,14 @@ const CampaignDetail = () => {
         return req;
       });
 
+      // Find the specific request to get the updated totals for campaign-level tracking
+      const myUpdatedReq = updatedRequests.find(r => r.creatorId === profile.uid);
+      const newEarningsDiff = myUpdatedReq.earnings - (campaign.requests.find(r => r.creatorId === profile.uid)?.earnings || 0);
+      const newViewsDiff = myUpdatedReq.totalViews - (campaign.requests.find(r => r.creatorId === profile.uid)?.totalViews || 0);
+
       // Also update total currentViews and spend on the campaign level
-      const newCampaignViews = (campaign.currentViews || 0) + simulatedViews;
-      const newCampaignSpend = (campaign.spend || 0) + earningsForLink;
+      const newCampaignViews = (campaign.currentViews || 0) + newViewsDiff;
+      const newCampaignSpend = (campaign.spend || 0) + newEarningsDiff;
       const progress = campaign.budget ? Math.min((newCampaignSpend / campaign.budget) * 100, 100) : 0;
 
       await updateDoc(campaignRef, { 
@@ -106,27 +126,28 @@ const CampaignDetail = () => {
         progress: progress
       });
 
-      // 2. Update the user's campaigns array
+      // 2. Update the user's document (walletBalance, totalViews, and campaigns array)
       const userRef = doc(db, 'users', profile.uid);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         const userData = userSnap.data();
         const updatedUserCampaigns = (userData.campaigns || []).map(c => {
           if (c.campaignId === id) {
-             const updatedLinks = [...(c.links || []), newLinkObj];
-             const totalViews = updatedLinks.reduce((sum, l) => sum + l.views, 0);
-             const estRev = updatedLinks.reduce((sum, l) => sum + l.earnings, 0);
              return {
                ...c,
-               links: updatedLinks,
-               totalViews,
-               estimatedRevenue: estRev
+               links: myUpdatedReq.links,
+               totalViews: myUpdatedReq.totalViews,
+               estimatedRevenue: myUpdatedReq.earnings
              };
           }
           return c;
         });
 
-        await updateDoc(userRef, { campaigns: updatedUserCampaigns });
+        await updateDoc(userRef, { 
+          campaigns: updatedUserCampaigns,
+          walletBalance: (userData.walletBalance || 0) + newEarningsDiff,
+          totalViews: (userData.totalViews || 0) + newViewsDiff
+        });
       }
 
       setLinkInput('');

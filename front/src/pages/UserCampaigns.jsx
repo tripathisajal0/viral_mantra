@@ -37,7 +37,7 @@ const UserCampaigns = () => {
 
     // Support both ID strings and full campaign objects
     const formattedCampaigns = profile.campaigns.map(c => 
-      typeof c === 'string' ? { id: c, title: c } : c
+      typeof c === 'string' ? { id: c, title: c } : { id: c.campaignId, ...c }
     );
     
     setCampaigns(formattedCampaigns);
