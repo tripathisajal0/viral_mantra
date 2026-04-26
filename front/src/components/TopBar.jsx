@@ -9,7 +9,7 @@ const TopBar = () => {
   const { toggleSidebar } = useUI();
 
   return (
-    <header className="fixed top-0 right-0 left-0 lg:left-64 h-16 flex items-center justify-between px-4 md:px-8 z-30 bg-white/70 backdrop-blur-md border-b border-indigo-100 shadow-sm">
+    <header className="h-16 flex items-center justify-between px-4 md:px-8 z-30 bg-white/70 backdrop-blur-md border-b border-indigo-100 shadow-sm w-full">
       <div className="flex items-center gap-3 md:gap-4">
         <button
           onClick={toggleSidebar}

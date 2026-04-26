@@ -10,12 +10,15 @@ import {
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { useUI } from '../context/UIContext';
+import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
   const location = useLocation();
   const { isSidebarOpen, closeSidebar } = useUI();
+  const { profile } = useAuth();
+  const role = profile?.role || 'creator';
 
-  const sections = [
+  const creatorSections = [
     {
       title: 'GENERAL',
       items: [
@@ -37,6 +40,30 @@ const Sidebar = () => {
       ]
     }
   ];
+
+  const brandSections = [
+    {
+      title: 'GENERAL',
+      items: [
+        { icon: Home, label: 'Dashboard', path: '/brand' },
+        { icon: LayoutGrid, label: 'Launch Campaign', path: '/brand/launch' },
+      ]
+    },
+    {
+      title: 'FINANCE',
+      items: [
+        { icon: Home, label: 'VM Points Wallet', path: '/brand/wallet' },
+      ]
+    },
+    {
+      title: 'SUPPORT',
+      items: [
+        { icon: Headphones, label: 'Live Support', path: '/support' },
+      ]
+    }
+  ];
+
+  const sections = role === 'brand' ? brandSections : creatorSections;
 
   return (
     <>

@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 
 const firebaseConfig = {
@@ -16,6 +17,7 @@ const firebaseConfig = {
 let app;
 let auth;
 let db;
+let storage;
 
 const isConfigValid = !!firebaseConfig.apiKey && firebaseConfig.apiKey !== 'your_api_key_here';
 
@@ -24,6 +26,7 @@ if (isConfigValid) {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app, "default");
+    storage = getStorage(app);
     console.log("Firebase initialized successfully ✅");
   } catch (error) {
     console.error("Firebase initialization failed:", error);
@@ -33,9 +36,10 @@ if (isConfigValid) {
   // Provide mock objects to prevent crashes in other components
   auth = { currentUser: null, onAuthStateChanged: () => () => {} };
   db = {};
+  storage = {};
 }
 
-export { auth, db };
+export { auth, db, storage };
 export const isFirebaseReady = isConfigValid;
 export const googleProvider = isConfigValid ? new GoogleAuthProvider() : null;
 

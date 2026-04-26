@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import TopBar from '../components/TopBar';
 import {
   ChevronRight,
   FileText,
@@ -27,7 +25,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { db, isFirebaseReady } from '../firebase';
-import { doc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, arrayUnion, collection, addDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 
 const PLATFORM_ICONS = {
@@ -95,19 +93,29 @@ const CampaignDetail = () => {
     setSubmitting(true);
     try {
       const campaignRef = doc(db, 'brand', id);
+
       const submissionData = {
         userId: profile?.uid || 'anonymous',
-        userName: profile?.name || 'Anonymous User',
-        userAvatar: profile?.avatar || '',
+        creatorId: profile?.uid || 'anonymous', // For teammate compatibility
+        creatorName: profile?.name || 'Anonymous User',
+        creatorPhoto: profile?.avatar || '',
+        campaignId: id,
+        campaignTitle: campaign?.title || 'Unknown Campaign',
+        brandId: campaign?.brandId || 'unknown',
         videoUrl: videoUrl,
         notes: notes,
         timestamp: new Date().toISOString(),
+        createdAt: new Date(), // For teammate ordering
         status: 'pending'
       };
 
-      const awaitRef = await updateDoc(campaignRef, {
+      // 1. Update Campaign document (Array approach)
+      await updateDoc(campaignRef, {
         requests: arrayUnion(submissionData)
       });
+
+      // 2. Add to Applications collection (Collection approach for teammate)
+      await addDoc(collection(db, 'applications'), submissionData);
 
       setSubmitted(true);
       setVideoUrl('');
@@ -147,11 +155,7 @@ const CampaignDetail = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#EEF0FB]">
-      <Sidebar />
-      <TopBar />
-
-      <main className="lg:ml-64 pt-20 px-4 md:px-8 pb-12 min-h-screen">
+    <div className="space-y-6">
         <div className="max-w-6xl mx-auto">
 
           {/* Breadcrumb */}
@@ -463,7 +467,6 @@ const CampaignDetail = () => {
             </div>
           </div>
         </div>
-      </main>
     </div>
   );
 };

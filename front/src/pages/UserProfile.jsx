@@ -1,15 +1,13 @@
 import React from 'react';
-import Sidebar from '../components/Sidebar';
-import TopBar from '../components/TopBar';
-import { 
-  User, 
-  Settings, 
-  Edit3, 
-  Users, 
-  Layout, 
-  Eye, 
-  Video, 
-  TrendingUp, 
+import {
+  User,
+  Settings,
+  Edit3,
+  Users,
+  Layout,
+  Eye,
+  Video,
+  TrendingUp,
   Award,
   ShieldCheck,
   CheckCircle2,
@@ -33,28 +31,24 @@ const UserProfile = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#EEF0FB] text-[#131b2e]">
-      <Sidebar />
-      <TopBar />
-
-      <main className="lg:ml-64 pt-24 px-4 md:px-8 pb-8">
+    <div className="space-y-8">
         <div className="max-w-7xl mx-auto space-y-8">
-          
+
           {/* Profile Header Card */}
-          <motion.section 
+          <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-white rounded-[32px] p-6 md:p-10 border border-indigo-100 shadow-sm relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full -mr-32 -mt-32 blur-3xl" />
-            
+
             <div className="relative z-10 flex flex-col lg:flex-row items-center lg:items-end justify-between gap-8">
               <div className="flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-10">
                 {/* Avatar */}
                 <div className="relative group">
                   <div className="w-32 h-32 md:w-40 md:h-40 rounded-[40px] overflow-hidden border-4 border-white shadow-xl">
-                    <img 
-                      src={profile?.avatar || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=1974&auto=format&fit=crop"} 
+                    <img
+                      src={profile?.avatar || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=1974&auto=format&fit=crop"}
                       alt={profile?.name}
                       className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
                     />
@@ -74,7 +68,7 @@ const UserProfile = () => {
                     <span className="w-1 h-1 rounded-full bg-slate-300" />
                     <span className="text-slate-400 font-medium">Joined {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'October 2024'}</span>
                   </p>
-                  
+
                   <div className="flex items-center justify-center md:justify-start gap-4 pt-2">
                     <button className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center gap-2">
                       <Edit3 size={16} />
@@ -107,7 +101,7 @@ const UserProfile = () => {
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {stats.map((stat, i) => (
-              <motion.div 
+              <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -131,7 +125,7 @@ const UserProfile = () => {
                   <User size={18} className="text-indigo-600" />
                   Profile Details
                 </h3>
-                
+
                 <div className="space-y-4">
                   <div className="flex items-center gap-4 text-sm">
                     <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
@@ -208,7 +202,7 @@ const UserProfile = () => {
                       +12% from last month
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                       <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Lifetime</p>
@@ -240,7 +234,7 @@ const UserProfile = () => {
                           <Award size={20} className="text-indigo-400" />
                         </div>
                         <div>
-                          <h4 className="font-bold text-slate-800 text-sm">Campaign Placeholder {i+1}</h4>
+                          <h4 className="font-bold text-slate-800 text-sm">Campaign Placeholder {i + 1}</h4>
                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Approved • ₹1,200 CPM</p>
                         </div>
                       </div>
@@ -256,7 +250,6 @@ const UserProfile = () => {
           </div>
 
         </div>
-      </main>
     </div>
   );
 };

@@ -1,6 +1,4 @@
 import React from 'react';
-import Sidebar from '../components/Sidebar';
-import TopBar from '../components/TopBar';
 import { 
   TrendingUp, 
   ShieldAlert, 
@@ -22,11 +20,7 @@ import { cn } from '../lib/utils';
 
 const AdminDashboard = () => {
   return (
-    <div className="min-h-screen bg-[#EEF0FB]">
-      <Sidebar />
-      <TopBar />
-      
-      <main className="lg:ml-64 pt-20 p-4 md:p-8 max-w-[1600px]">
+    <div className="space-y-8 max-w-[1600px]">
         {/* Dashboard Header */}
         <div className="flex justify-between items-end mb-8">
           <div>
@@ -249,7 +243,6 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-      </main>
     </div>
   );
 };

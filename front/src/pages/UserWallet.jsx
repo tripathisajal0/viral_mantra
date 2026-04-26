@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import Sidebar from '../components/Sidebar';
-import TopBar from '../components/TopBar';
 import { 
   Wallet, 
   ArrowUpRight, 
@@ -30,11 +28,7 @@ const UserWallet = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#EEF0FB] text-[#131b2e]">
-      <Sidebar />
-      <TopBar />
-
-      <main className="lg:ml-64 pt-24 px-4 md:px-8 pb-8">
+    <div className="space-y-8">
         <div className="max-w-7xl mx-auto space-y-8">
           
           {/* Header */}
@@ -183,7 +177,6 @@ const UserWallet = () => {
           </section>
 
         </div>
-      </main>
     </div>
   );
 };

@@ -13,6 +13,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { doc, updateDoc, increment, addDoc, collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { cn } from '../../lib/utils';
+import { db } from '../../firebase';
 
 const Wallet = () => {
   const { profile, user } = useAuth();

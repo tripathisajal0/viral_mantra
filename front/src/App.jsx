@@ -4,17 +4,18 @@ import { useAuth } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import CreatorDashboard from './pages/CreatorDashboard';
-import BrandDashboard from './pages/BrandDashboard';
-import CampaignLaunch from './pages/CampaignLaunch';
+
 import AdminDashboard from './pages/AdminDashboard';
 import CampaignDetail from './pages/CampaignDetail';
 import UserWallet from './pages/UserWallet';
 import UserProfile from './pages/UserProfile';
 
-// Unique pages from teammate version
+// Teammate Brand Pages
+import BrandDashboard from './pages/brand/BrandDashboard';
+import CampaignLaunch from './pages/brand/CampaignLaunch';
 import BrandCampaignDetail from './pages/brand/BrandCampaignDetail';
-import BrandDashboardV2 from './pages/brand/BrandDashboard';
 import WalletBrand from './pages/brand/Wallet';
+import DashboardLayout from './components/DashboardLayout';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -39,6 +40,7 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   return children;
 };
 
+
 function App() {
   return (
     <Router>
@@ -49,59 +51,70 @@ function App() {
         {/* Creator Routes */}
         <Route path="/creator" element={
           <ProtectedRoute requiredRole="creator">
-            <CreatorDashboard />
+            <DashboardLayout>
+              <CreatorDashboard />
+            </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/campaign/:id" element={
           <ProtectedRoute requiredRole="creator">
-            <CampaignDetail />
+            <DashboardLayout>
+              <CampaignDetail />
+            </DashboardLayout>
           </ProtectedRoute>
         } />
 
         {/* Shared Protected Routes */}
         <Route path="/wallet" element={
           <ProtectedRoute>
-            <UserWallet />
+            <DashboardLayout>
+              <UserWallet />
+            </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/profile" element={
           <ProtectedRoute>
-            <UserProfile />
+            <DashboardLayout>
+              <UserProfile />
+            </DashboardLayout>
           </ProtectedRoute>
         } />
 
-        {/* Brand/Admin Routes */}
+        {/* Brand Routes */}
         <Route path="/brand" element={
           <ProtectedRoute requiredRole="brand">
-            <BrandDashboard />
+            <DashboardLayout>
+              <BrandDashboard />
+            </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/brand/launch" element={
           <ProtectedRoute requiredRole="brand">
-            <CampaignLaunch />
-          </ProtectedRoute>
-        } />
-        
-        {/* Teammate Brand Routes Integration */}
-        <Route path="/brand/v2" element={
-          <ProtectedRoute requiredRole="brand">
-            <BrandDashboardV2 />
+            <DashboardLayout>
+              <CampaignLaunch />
+            </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/brand/campaign/:id" element={
           <ProtectedRoute requiredRole="brand">
-            <BrandCampaignDetail />
+            <DashboardLayout>
+              <BrandCampaignDetail />
+            </DashboardLayout>
           </ProtectedRoute>
         } />
         <Route path="/brand/wallet" element={
           <ProtectedRoute requiredRole="brand">
-            <WalletBrand />
+            <DashboardLayout>
+              <WalletBrand />
+            </DashboardLayout>
           </ProtectedRoute>
         } />
 
         <Route path="/admin" element={
           <ProtectedRoute requiredRole="brand">
-            <AdminDashboard />
+            <DashboardLayout>
+              <AdminDashboard />
+            </DashboardLayout>
           </ProtectedRoute>
         } />
 

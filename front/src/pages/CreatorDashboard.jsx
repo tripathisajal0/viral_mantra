@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import TopBar from '../components/TopBar';
 import {
   Eye,
   MessageSquare,
@@ -62,12 +60,7 @@ const CreatorDashboard = () => {
   const displayCampaigns = campaigns;
 
   return (
-    <div className="min-h-screen bg-[#EEF0FB] text-[#131b2e]">
-      <Sidebar />
-      <TopBar />
-
-      <main className="lg:ml-64 pt-24 px-4 md:px-8 pb-8">
-        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
+    <div className="space-y-6 md:space-y-8">
 
           {/* Welcome Header */}
           <section>
@@ -295,8 +288,6 @@ const CreatorDashboard = () => {
             )}
           </section>
 
-        </div>
-      </main>
     </div>
   );
 };
