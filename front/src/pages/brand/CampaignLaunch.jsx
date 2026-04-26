@@ -24,7 +24,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { db, storage } from '../../firebase';
-import { doc, setDoc, updateDoc, increment, addDoc, collection } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, increment, addDoc, collection, arrayUnion } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -32,9 +32,9 @@ import { useNavigate } from 'react-router-dom';
 const CampaignLaunch = () => {
   const [step, setStep] = useState(1);
   const [selectedPlatforms, setSelectedPlatforms] = useState(['Instagram Reels']);
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
-  
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Lifestyle');
@@ -188,9 +188,11 @@ const CampaignLaunch = () => {
         lastUpdated: new Date()
       });
 
-      // Deduct from wallet
+      // Deduct from wallet & increment campaign count
       await updateDoc(userRef, {
-        walletBalance: increment(-budgetNum)
+        walletBalance: increment(-budgetNum),
+        campaignsLaunched: increment(1),
+        campaigns: arrayUnion(title)
       });
 
       // Record Transaction
@@ -202,7 +204,10 @@ const CampaignLaunch = () => {
         status: 'Debited',
         createdAt: new Date()
       });
-      
+
+      // Refresh in-memory profile so wallet balance reflects immediately
+      if (typeof refreshProfile === 'function') await refreshProfile();
+
       alert("Campaign launched successfully!");
       navigate('/brand');
     } catch (error) {
@@ -429,12 +434,68 @@ const CampaignLaunch = () => {
                     </div>
                   )}
 
-                  {step === 3 && (
+                  {step === 3 && (() => {
+                    const _budget = parseFloat(totalBudget) || 0;
+                    const _balance = profile?.walletBalance ?? 0;
+                    const _insufficient = _budget > 0 && _budget > _balance;
+                    const _pct = _balance > 0 ? Math.min((_budget / _balance) * 100, 100) : 0;
+                    return (
                     <div className="space-y-8">
                       <header>
                         <h2 className="text-h2 text-on-surface mb-2 font-bold">Budget & Timeline</h2>
                         <p className="text-body-md text-outline">Set your investment and campaign schedule.</p>
                       </header>
+
+                      {/* ── VM Points Wallet Widget ───────────────────────────── */}
+                      <div className={cn(
+                        "rounded-2xl p-5 border-2 flex items-center justify-between gap-4 transition-all",
+                        _insufficient
+                          ? "bg-red-50 border-red-200"
+                          : "bg-emerald-50 border-emerald-200"
+                      )}>
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-11 h-11 rounded-xl flex items-center justify-center",
+                            _insufficient ? "bg-red-100 text-red-500" : "bg-emerald-100 text-emerald-600"
+                          )}>
+                            <Wallet size={22} />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Your VM Points Balance</p>
+                            <p className={cn(
+                              "text-xl font-black",
+                              _insufficient ? "text-red-600" : "text-emerald-700"
+                            )}>
+                              ₹{_balance.toLocaleString('en-IN')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1.5 min-w-[120px]">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                            {_budget > 0 ? 'Budget usage' : 'Enter budget'}
+                          </p>
+                          <div className="w-full h-2 bg-white rounded-full overflow-hidden border border-slate-200">
+                            <div
+                              className={cn(
+                                "h-full rounded-full transition-all duration-300",
+                                _insufficient ? "bg-red-500" : "bg-emerald-500"
+                              )}
+                              style={{ width: `${_pct}%` }}
+                            />
+                          </div>
+                          <p className={cn(
+                            "text-[11px] font-bold",
+                            _insufficient ? "text-red-500" : "text-emerald-600"
+                          )}>
+                            {_budget > 0
+                              ? _insufficient
+                                ? `⚠ Exceeds by ₹${(_budget - _balance).toLocaleString('en-IN')}`
+                                : `₹${(_balance - _budget).toLocaleString('en-IN')} remaining`
+                              : '—'
+                            }
+                          </p>
+                        </div>
+                      </div>
 
                       <div className="space-y-6">
                         <div className="grid grid-cols-2 gap-6">
@@ -443,8 +504,14 @@ const CampaignLaunch = () => {
                             <div className="relative">
                               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-outline font-bold">₹</span>
                               <input
-                                className="w-full bg-white border border-outline-variant rounded-xl p-4 pl-10 focus:ring-2 focus:ring-primary/50 outline-none transition-all"
+                                className={cn(
+                                  "w-full bg-white border rounded-xl p-4 pl-10 focus:ring-2 outline-none transition-all",
+                                  _insufficient
+                                    ? "border-red-400 focus:ring-red-300 text-red-700"
+                                    : "border-outline-variant focus:ring-primary/50"
+                                )}
                                 type="number"
+                                min="0"
                                 value={totalBudget}
                                 onChange={(e) => setTotalBudget(e.target.value)}
                               />
@@ -507,7 +574,8 @@ const CampaignLaunch = () => {
                         </div>
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
 
                   {step === 4 && (
                     <div className="space-y-8">
@@ -655,16 +723,28 @@ const CampaignLaunch = () => {
                       )}
                     </div>
                     
-                    {step < 4 && (
-                      <button
-                        type="button"
-                        onClick={() => setStep(step + 1)}
-                        className="bg-primary text-white px-10 py-3 rounded-full font-label-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2"
-                      >
-                        Next
-                        <ArrowRight size={18} />
-                      </button>
-                    )}
+                    {step < 4 && (() => {
+                      const _b = parseFloat(totalBudget) || 0;
+                      const _bal = profile?.walletBalance ?? 0;
+                      const _blockNext = step === 3 && (_b <= 0 || _b > _bal);
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => !_blockNext && setStep(step + 1)}
+                          disabled={_blockNext}
+                          title={_blockNext ? (_b <= 0 ? 'Enter a valid budget amount' : 'Insufficient VM Points balance') : ''}
+                          className={cn(
+                            "px-10 py-3 rounded-full font-label-bold shadow-lg transition-all flex items-center gap-2",
+                            _blockNext
+                              ? "bg-slate-300 text-slate-500 cursor-not-allowed opacity-70"
+                              : "bg-primary text-white shadow-primary/20 hover:scale-[1.02] active:scale-95"
+                          )}
+                        >
+                          Next
+                          <ArrowRight size={18} />
+                        </button>
+                      );
+                    })()}
                   </div>
                 </motion.div>
               </AnimatePresence>

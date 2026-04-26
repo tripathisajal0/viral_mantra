@@ -139,7 +139,10 @@ const CreatorDashboard = () => {
                       <span className="text-white">₹{profile?.pendingEarnings?.toLocaleString() || '0.00'}</span>
                     </p>
                   </div>
-                  <button className="w-full sm:w-auto bg-white text-indigo-700 px-5 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] transition-all">
+                  <button 
+                    onClick={() => navigate('/my-campaigns')}
+                    className="w-full sm:w-auto bg-white text-indigo-700 px-5 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] transition-all"
+                  >
                     <LayoutGrid size={16} />
                     My Campaigns
                   </button>

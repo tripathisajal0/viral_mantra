@@ -8,6 +8,9 @@ const TopBar = () => {
   const { profile } = useAuth();
   const { toggleSidebar } = useUI();
 
+  // Route to the role-specific profile page
+  const profilePath = profile?.role === 'brand' ? '/brand/profile' : '/profile';
+
   return (
     <header className="h-16 flex items-center justify-between px-4 md:px-8 z-30 bg-white/70 backdrop-blur-md border-b border-indigo-100 shadow-sm w-full">
       <div className="flex items-center gap-3 md:gap-4">
@@ -21,22 +24,24 @@ const TopBar = () => {
 
       <div className="flex items-center gap-3 md:gap-4">
         {/* Wallet */}
-        <Link 
-          to="/wallet"
-          className="hidden sm:flex items-center gap-2 bg-indigo-50 pl-3 pr-2 py-1.5 rounded-xl border border-indigo-100 hover:bg-indigo-100 transition-colors cursor-pointer group"
-        >
-          <div className="flex items-center gap-1.5">
-            <div className="w-5 h-5 bg-indigo-600/10 rounded-full flex items-center justify-center group-hover:bg-indigo-600/20 transition-colors">
-              <Wallet size={12} className="text-indigo-600" />
+        {profile?.role !== 'brand' && (
+          <Link 
+            to="/wallet"
+            className="hidden sm:flex items-center gap-2 bg-indigo-50 pl-3 pr-2 py-1.5 rounded-xl border border-indigo-100 hover:bg-indigo-100 transition-colors cursor-pointer group"
+          >
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 bg-indigo-600/10 rounded-full flex items-center justify-center group-hover:bg-indigo-600/20 transition-colors">
+                <Wallet size={12} className="text-indigo-600" />
+              </div>
+              <span className="text-slate-700 font-bold text-xs md:text-sm">
+                ₹{profile?.walletBalance?.toLocaleString() || '0.00'}
+              </span>
             </div>
-            <span className="text-slate-700 font-bold text-xs md:text-sm">
-              ₹{profile?.walletBalance?.toLocaleString() || '0.00'}
-            </span>
-          </div>
-          <div className="p-1 text-slate-400 group-hover:text-indigo-600 transition-colors">
-            <ChevronDown size={14} />
-          </div>
-        </Link>
+            <div className="p-1 text-slate-400 group-hover:text-indigo-600 transition-colors">
+              <ChevronDown size={14} />
+            </div>
+          </Link>
+        )}
 
         {/* Notification */}
         <button className="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
@@ -44,9 +49,9 @@ const TopBar = () => {
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-500 rounded-full border border-white" />
         </button>
 
-        {/* Avatar */}
+        {/* Avatar — role-aware profile link */}
         <Link 
-          to="/profile"
+          to={profilePath}
           className="w-8 md:w-9 h-8 md:h-9 rounded-xl overflow-hidden border-2 border-indigo-200 shadow-sm hover:border-indigo-400 transition-all cursor-pointer"
         >
           <img
@@ -61,3 +66,4 @@ const TopBar = () => {
 };
 
 export default TopBar;
+

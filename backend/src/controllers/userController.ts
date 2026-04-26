@@ -27,6 +27,7 @@ export const registerUser = async (req: AuthRequest, res: Response) => {
       trustScore: 100,
       totalViews: 0,
       activeCampaigns: 0,
+      campaigns: [],
       verificationStatus: 'pending',
       createdAt: new Date().toISOString()
     };

@@ -23,14 +23,12 @@ const Sidebar = () => {
       title: 'GENERAL',
       items: [
         { icon: Home, label: 'Home', path: '/creator' },
-        { icon: Users, label: 'Users', path: '/users' },
-        { icon: Trophy, label: 'Leaderboard', path: '/leaderboard' },
       ]
     },
     {
       title: 'ACTIVITY',
       items: [
-        { icon: LayoutGrid, label: 'My Campaigns', path: '/campaigns' },
+        { icon: LayoutGrid, label: 'My Campaigns', path: '/my-campaigns' },
       ]
     },
     {

@@ -40,13 +40,23 @@ export const AuthProvider = ({ children }) => {
     setProfile(data);
   };
 
+  const refreshProfile = async () => {
+    try {
+      const { data } = await api.get("/users/profile");
+      setProfile(data);
+    } catch (error) {
+      console.log("refreshProfile error:", error);
+    }
+  };
+
   const value = {
     user,
     profile,
     loading,
     login,
     logout,
-    register
+    register,
+    refreshProfile
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

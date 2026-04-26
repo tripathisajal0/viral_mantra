@@ -9,12 +9,14 @@ import AdminDashboard from './pages/AdminDashboard';
 import CampaignDetail from './pages/CampaignDetail';
 import UserWallet from './pages/UserWallet';
 import UserProfile from './pages/UserProfile';
+import UserCampaigns from './pages/UserCampaigns';
 
 // Teammate Brand Pages
 import BrandDashboard from './pages/brand/BrandDashboard';
 import CampaignLaunch from './pages/brand/CampaignLaunch';
 import BrandCampaignDetail from './pages/brand/BrandCampaignDetail';
 import WalletBrand from './pages/brand/Wallet';
+import BrandProfile from './pages/brand/brandProfile';
 import DashboardLayout from './components/DashboardLayout';
 
 // Protected Route Component
@@ -63,6 +65,13 @@ function App() {
             </DashboardLayout>
           </ProtectedRoute>
         } />
+        <Route path="/my-campaigns" element={
+          <ProtectedRoute requiredRole="creator">
+            <DashboardLayout>
+              <UserCampaigns />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
 
         {/* Shared Protected Routes */}
         <Route path="/wallet" element={
@@ -106,6 +115,13 @@ function App() {
           <ProtectedRoute requiredRole="brand">
             <DashboardLayout>
               <WalletBrand />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/brand/profile" element={
+          <ProtectedRoute requiredRole="brand">
+            <DashboardLayout>
+              <BrandProfile />
             </DashboardLayout>
           </ProtectedRoute>
         } />

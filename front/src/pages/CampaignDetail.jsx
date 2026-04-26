@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -53,12 +55,9 @@ const CampaignDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { profile } = useAuth();
-  const [videoUrl, setVideoUrl] = useState('');
-  const [notes, setNotes] = useState('');
-  const [agreed, setAgreed] = useState(false);
-  const [targetViews, setTargetViews] = useState(50000);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [joined, setJoined] = useState(false);
+  const [targetViews, setTargetViews] = useState(50000);
 
 
 
@@ -86,44 +85,38 @@ const CampaignDetail = () => {
     return () => unsub();
   }, [id]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!videoUrl || !agreed) return;
-
+  const handleJoin = async () => {
+    if (profile?.verificationStatus !== 'verified') return;
     setSubmitting(true);
     try {
       const campaignRef = doc(db, 'brand', id);
-
-      const submissionData = {
+      
+      const applicationData = {
         userId: profile?.uid || 'anonymous',
-        creatorId: profile?.uid || 'anonymous', // For teammate compatibility
+        creatorId: profile?.uid || 'anonymous',
         creatorName: profile?.name || 'Anonymous User',
         creatorPhoto: profile?.avatar || '',
         campaignId: id,
         campaignTitle: campaign?.title || 'Unknown Campaign',
         brandId: campaign?.brandId || 'unknown',
-        videoUrl: videoUrl,
-        notes: notes,
         timestamp: new Date().toISOString(),
-        createdAt: new Date(), // For teammate ordering
-        status: 'pending'
+        createdAt: new Date(),
+        status: 'pending',
+        type: 'application'
       };
 
       // 1. Update Campaign document (Array approach)
       await updateDoc(campaignRef, {
-        requests: arrayUnion(submissionData)
+        requests: arrayUnion(applicationData)
       });
 
-      // 2. Add to Applications collection (Collection approach for teammate)
-      await addDoc(collection(db, 'applications'), submissionData);
+      // 2. Add to Applications collection
+      await addDoc(collection(db, 'applications'), applicationData);
 
-      setSubmitted(true);
-      setVideoUrl('');
-      setNotes('');
-      setAgreed(false);
+      setJoined(true);
     } catch (err) {
-      console.error('[Detail] Submission failed:', err);
-      setError('Submission failed. Please try again.');
+      console.error('[Detail] Join failed:', err);
+      setError('Failed to join campaign. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -381,86 +374,77 @@ const CampaignDetail = () => {
                 </div>
               )}
 
-              {/* Submission Form */}
-              <div className="bg-white rounded-2xl p-6 border-t-4 border-indigo-600 border border-indigo-100 shadow-sm">
-                <h3 className="font-bold text-base mb-2">Submit Your Video</h3>
-                <p className="text-slate-400 text-[10px] uppercase font-bold tracking-widest mb-5">Final Step for Review</p>
+              {/* Join Campaign Section */}
+              <div className="bg-white rounded-2xl p-6 border-t-4 border-indigo-600 border border-indigo-100 shadow-sm text-center">
+                <h3 className="font-bold text-lg mb-2">Join Campaign</h3>
+                <p className="text-slate-500 text-sm mb-6 font-medium leading-relaxed">
+                  Apply now to collaborate with {campaign?.brandName || 'the brand'} and start earning.
+                </p>
                 
-                {submitted ? (
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-green-50 border border-green-100 rounded-2xl p-8 text-center space-y-4"
-                  >
-                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                      <CheckCircle2 size={32} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-800">Application Sent!</h4>
-                      <p className="text-sm text-slate-500 mt-1">The brand will review your video shortly. Keep an eye on your dashboard.</p>
-                    </div>
-                    <button 
-                      onClick={() => setSubmitted(false)}
-                      className="text-indigo-600 font-bold text-xs hover:underline"
-                    >
-                      Submit another video?
-                    </button>
-                  </motion.div>
-                ) : (
-                  <form className="space-y-4" onSubmit={handleSubmit}>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 block mb-2 uppercase tracking-widest">
-                        Video URL
-                      </label>
-                      <div className="relative">
-                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                        <input
-                          required
-                          className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm font-medium"
-                          placeholder="https://..."
-                          type="url"
-                          value={videoUrl}
-                          onChange={e => setVideoUrl(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 block mb-2 uppercase tracking-widest">
-                        Notes (Optional)
-                      </label>
-                      <textarea
-                        className="w-full bg-white border border-slate-200 rounded-xl py-2.5 px-4 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-sm font-medium resize-none"
-                        placeholder="Any context for the brand?"
-                        rows={3}
-                        value={notes}
-                        onChange={e => setNotes(e.target.value)}
-                      />
-                    </div>
-                    <div className="bg-slate-50 p-3 rounded-xl flex items-start gap-3 border border-slate-100">
-                      <input
-                        className="mt-1 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                        id="terms"
-                        type="checkbox"
-                        checked={agreed}
-                        onChange={e => setAgreed(e.target.checked)}
-                      />
-                      <label className="text-[10px] text-slate-500 leading-tight font-medium cursor-pointer" htmlFor="terms">
-                        I confirm this video follows all brand guidelines and Viral Mantra community standards.
-                      </label>
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={submitting || !videoUrl || !agreed}
-                      className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
-                    >
-                      {submitting ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <Send size={16} />
-                      )}
-                      {submitting ? 'Submitting...' : 'Submit for Review'}
-                    </button>
-                  </form>
+                <button
+                  onClick={handleJoin}
+                  disabled={submitting || joined || profile?.verificationStatus !== 'verified'}
+                  className={`w-full font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 
+                    ${joined 
+                      ? 'bg-green-100 text-green-700 border border-green-200 cursor-default' 
+                      : profile?.verificationStatus !== 'verified'
+                        ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-[0.98]'
+                    } 
+                    disabled:opacity-70 disabled:transform-none`}
+                >
+                  {submitting ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : joined ? (
+                    <>
+                      <CheckCircle2 size={18} />
+                      Joined Successfully
+                    </>
+                  ) : profile?.verificationStatus === 'pending' ? (
+                    <>
+                      <Clock size={18} />
+                      Verification Pending
+                    </>
+                  ) : profile?.verificationStatus === 'rejected' ? (
+                    <>
+                      <XCircle size={18} />
+                      Verification Rejected
+                    </>
+                  ) : profile?.verificationStatus === 'verified' ? (
+                    <>
+                      <Send size={18} />
+                      Join Campaign
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle size={18} />
+                      Verification Required
+                    </>
+                  )}
+                </button>
+                
+                {joined && (
+                  <p className="mt-4 text-xs text-green-600 font-bold flex items-center justify-center gap-1 animate-pulse">
+                    <CheckCircle2 size={12} /> Application sent to brand!
+                  </p>
+                )}
+
+                {!joined && profile?.verificationStatus === 'pending' && (
+                  <p className="mt-4 text-xs text-amber-600 font-bold flex items-center justify-center gap-1">
+                    <AlertCircle size={12} /> You'll be able to join once your account is verified.
+                  </p>
+                )}
+
+                {!joined && profile?.verificationStatus === 'rejected' && (
+                  <p className="mt-4 text-xs text-red-600 font-bold flex items-center justify-center gap-1">
+                    <XCircle size={12} /> Your verification was not approved.
+                  </p>
+                )}
+
+                {!joined && !profile?.verificationStatus && (
+                  <p className="mt-4 text-xs text-indigo-600 font-bold flex items-center justify-center gap-1">
+                    <AlertCircle size={12} /> Please complete your profile to apply.
+                  </p>
                 )}
               </div>
 
